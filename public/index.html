@@ -16,7 +16,7 @@
       <button type="button" id="theme-toggle" class="icon-btn" aria-label="Toggle theme">☀️</button>
       <nav>
         <a href="#/">Projects</a>
-        <a href="#/apis">APIs</a>
+        <a href="#/apis" id="nav-apis-link" class="hidden">APIs</a>
         <a href="#/new" class="btn btn-primary btn-sm nav-create" id="nav-add-project">Add Project</a>
         <a href="#/admin" id="nav-admin-link" class="hidden">Admin</a>
         <span id="nav-user" class="nav-user hidden"></span>
@@ -216,7 +216,7 @@
 
     <div id="apis-view" class="view hidden">
       <h1>Backend API</h1>
-      <p class="sub">Full API reference and live responses. Base URL: <code id="api-base-url">/api</code></p>
+      <p class="sub">Admin only. Full API reference and live responses. Base URL: <code id="api-base-url">/api</code></p>
 
       <section class="api-section">
         <h2>Health</h2>
@@ -253,7 +253,7 @@
           <code>/api/auth/me</code>
           <span class="api-auth">— Bearer token required</span>
         </div>
-        <p class="api-desc">Current user. Returns <code>{ id, username, created_at }</code>.</p>
+        <p class="api-desc">Current user. Returns <code>{ id, username, role, created_at }</code>.</p>
         <div class="api-response">
           <h3>GET /api/auth/me</h3>
           <pre id="api-me-output" class="api-pre"><code>—</code></pre>
@@ -267,7 +267,7 @@
           <code>/api/projects</code>
           <span class="api-auth">— No auth</span>
         </div>
-        <p class="api-desc">List projects. Query: <code>?search=</code> <code>?status=published|draft|archived</code> <code>?featured=1</code> <code>?sort=date|title|developer</code>.</p>
+        <p class="api-desc">List projects. Query: <code>?search=</code> <code>?tag=</code> <code>?status=published|draft|archived</code> <code>?featured=1</code> <code>?sort=date|title|developer</code>.</p>
         <div class="api-response">
           <h3>Response</h3>
           <pre id="api-projects-output" class="api-pre"><code>Loading…</code></pre>
@@ -283,23 +283,44 @@
         <div class="api-endpoint">
           <span class="api-method post">POST</span>
           <code>/api/projects</code>
-          <span class="api-auth">— Bearer token required</span>
+          <span class="api-auth">— Bearer token (developer or admin)</span>
         </div>
         <p class="api-desc">Create project. <code>multipart/form-data</code>: title, developer_name, description, timeline, link, tech_stack, status, featured (0|1), tags (JSON array), images (files). Sets created_by from token.</p>
 
         <div class="api-endpoint">
           <span class="api-method put">PUT</span>
           <code>/api/projects/:id</code>
-          <span class="api-auth">— Bearer token required</span>
+          <span class="api-auth">— Bearer token (creator or admin)</span>
         </div>
         <p class="api-desc">Update project. JSON or multipart. Multipart: same fields as POST + keep_images (JSON array of URLs to keep).</p>
 
         <div class="api-endpoint">
           <span class="api-method delete">DELETE</span>
           <code>/api/projects/:id</code>
-          <span class="api-auth">— Bearer token required</span>
+          <span class="api-auth">— Bearer token (creator or admin)</span>
         </div>
         <p class="api-desc">Delete project. Returns 204 No Content.</p>
+      </section>
+
+      <section class="api-section">
+        <h2>Users (admin only)</h2>
+        <div class="api-endpoint">
+          <span class="api-method get">GET</span>
+          <code>/api/users</code>
+          <span class="api-auth">— Bearer token (admin)</span>
+        </div>
+        <p class="api-desc">List all users. Returns array of <code>{ id, username, role, created_at }</code>. Admin only.</p>
+        <div class="api-response">
+          <h3>Response</h3>
+          <pre id="api-users-output" class="api-pre"><code>Loading…</code></pre>
+        </div>
+
+        <div class="api-endpoint">
+          <span class="api-method put">PUT</span>
+          <code>/api/users/:id/role</code>
+          <span class="api-auth">— Bearer token (admin)</span>
+        </div>
+        <p class="api-desc">Set user role. Body: <code>{ "role": "viewer" | "developer" | "admin" }</code>. Returns updated user. Admin only.</p>
       </section>
 
       <section class="api-section">

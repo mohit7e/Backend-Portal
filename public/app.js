@@ -93,6 +93,7 @@ function updateHeader() {
       navUser.classList.remove('hidden');
     }
     if ($('nav-admin-link')) $('nav-admin-link').classList.toggle('hidden', role !== 'admin');
+    if ($('nav-apis-link')) $('nav-apis-link').classList.toggle('hidden', role !== 'admin');
     if ($('nav-developer-badge')) $('nav-developer-badge').classList.toggle('hidden', role !== 'developer');
     if ($('nav-admin-badge')) $('nav-admin-badge').classList.toggle('hidden', role !== 'admin');
     const canCreate = role === 'developer' || role === 'admin';
@@ -103,6 +104,7 @@ function updateHeader() {
     if (navLogout) navLogout.classList.add('hidden');
     if (navUser) navUser.classList.add('hidden');
     if ($('nav-admin-link')) $('nav-admin-link').classList.add('hidden');
+    if ($('nav-apis-link')) $('nav-apis-link').classList.add('hidden');
     if ($('nav-developer-badge')) $('nav-developer-badge').classList.add('hidden');
     if ($('nav-admin-badge')) $('nav-admin-badge').classList.add('hidden');
     document.querySelectorAll('.nav-create, .list-create-btn').forEach((el) => el && el.classList.add('hidden'));
@@ -505,10 +507,12 @@ async function loadApis() {
   const healthEl = $('api-health-output');
   const projectsEl = $('api-projects-output');
   const meEl = $('api-me-output');
+  const usersEl = $('api-users-output');
 
   if (healthEl) healthEl.querySelector('code').textContent = 'Loading…';
   if (projectsEl) projectsEl.querySelector('code').textContent = 'Loading…';
   if (meEl) meEl.querySelector('code').textContent = 'Loading…';
+  if (usersEl) usersEl.querySelector('code').textContent = 'Loading…';
 
   try {
     const [healthRes, projectsRes] = await Promise.all([
@@ -534,6 +538,14 @@ async function loadApis() {
     }
   } catch (e) {
     if (meEl) meEl.querySelector('code').textContent = 'Error: ' + e.message;
+  }
+
+  try {
+    const usersRes = await fetch(USERS_API, { headers: authHeaders(), method: 'GET' });
+    const usersData = usersRes.ok ? await usersRes.json().catch(() => []) : { error: usersRes.status === 401 ? 'Unauthorized' : usersRes.status === 403 ? 'Forbidden (admin only)' : 'Error ' + usersRes.status };
+    if (usersEl) usersEl.querySelector('code').textContent = typeof usersData === 'object' && !Array.isArray(usersData) && usersData.error ? usersData.error : JSON.stringify(usersData, null, 2);
+  } catch (e) {
+    if (usersEl) usersEl.querySelector('code').textContent = 'Error: ' + e.message;
   }
 }
 
@@ -658,7 +670,14 @@ function route() {
   else if (view === 'register') loadRegister();
   else if (view === 'admin') loadAdmin();
   else if (view === 'list') loadList();
-  else if (view === 'apis') loadApis();
+  else if (view === 'apis') {
+    if (userRole() !== 'admin') {
+      toast('Only admins can view the API reference.', 'error');
+      window.location.hash = '#/';
+      return;
+    }
+    loadApis();
+  }
   else if (view === 'detail' && id) loadDetail(id);
   else if (view === 'form') {
     if (userRole() !== 'developer' && userRole() !== 'admin') {
