@@ -1,0 +1,28 @@
+{
+  "nextId": 4,
+  "users": [
+    {
+      "id": 1,
+      "username": "mohit",
+      "passwordHash": "242dc3aef348d7afcf39bc8567f9b914:eb473321c63a1679e5f36232968dd9bc4d8e75b79f45bd9ab2ad13933eb38c6b72afc8ac820a7b44ea83117dce0fa42b35f5a68261142bc98aba71fb06b63ec3",
+      "created_at": "2026-02-02T17:12:42.617Z",
+      "role": "developer",
+      "is_admin": false
+    },
+    {
+      "id": 2,
+      "username": "testuser1",
+      "passwordHash": "87bfc8bb7e8291867eed8c6d083769c5:2f8ac2965c74f26869dfa4bcc0b1ccb42e00efd82b91fbb4fea57214927ceeca04d75fe6f184b2e77b7dfbd6d73843972474ee3b492fb070136fb21f97948924",
+      "created_at": "2026-02-02T22:31:17.605Z",
+      "role": "viewer",
+      "is_admin": false
+    },
+    {
+      "id": 3,
+      "username": "admin",
+      "passwordHash": "518a879d66ca78b81901d6476b81ced9:0acefbd36a6849a54b1a598e70b68458a1a01db159aeaaa9a960fc5879d82e1f6dc0360712fa9f7ad3d7fee2bfbe30ebc43b54e5107a3fedb5ecc5482dac536d",
+      "created_at": "2026-02-02T23:10:27.528Z",
+      "is_admin": true
+    }
+  ]
+}

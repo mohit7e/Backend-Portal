@@ -1,0 +1,18 @@
+{
+  "name": "project-portal-backend",
+  "version": "1.0.0",
+  "description": "Backend for developer project management portal",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": ["projects", "portal", "api"],
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "multer": "^2.0.0"
+  }
+}

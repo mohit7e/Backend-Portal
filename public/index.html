@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project Portal</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="header">
+    <a href="#/" class="logo">Project Portal</a>
+    <div class="header-right">
+      <div class="search-wrap">
+        <input type="search" id="global-search" placeholder="Search projects…" aria-label="Search projects">
+      </div>
+      <button type="button" id="theme-toggle" class="icon-btn" aria-label="Toggle theme">☀️</button>
+      <nav>
+        <a href="#/">Projects</a>
+        <a href="#/apis">APIs</a>
+        <a href="#/new" class="btn btn-primary btn-sm nav-create" id="nav-add-project">Add Project</a>
+        <a href="#/admin" id="nav-admin-link" class="hidden">Admin</a>
+        <span id="nav-user" class="nav-user hidden"></span>
+        <span id="nav-developer-badge" class="nav-role-badge nav-developer-badge hidden">Developer</span>
+        <span id="nav-admin-badge" class="nav-role-badge nav-admin-badge hidden">Admin</span>
+        <a href="#/login" id="nav-login">Login</a>
+        <a href="#/register" id="nav-register">Register</a>
+        <button type="button" id="nav-logout" class="btn btn-secondary btn-sm hidden">Logout</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+    <div id="list-view" class="view">
+      <div class="list-header">
+        <div class="list-header-top">
+          <h1>Your Projects</h1>
+          <a href="#/new" class="btn btn-primary list-create-btn hidden" id="list-create-btn">Create new project</a>
+        </div>
+        <p class="sub">Click a project to open it. Use search and filters to find what you need.</p>
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <label class="label-inline">Sort</label>
+          <select id="sort-select" aria-label="Sort by">
+            <option value="date">Newest first</option>
+            <option value="title">Title A–Z</option>
+            <option value="developer">Developer</option>
+          </select>
+        </div>
+        <div class="toolbar-group">
+          <label class="label-inline">Status</label>
+          <select id="filter-status" aria-label="Filter by status">
+            <option value="">All</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div class="toolbar-group">
+          <label class="checkbox-inline">
+            <input type="checkbox" id="filter-featured" aria-label="Featured only">
+            <span>Featured only</span>
+          </label>
+        </div>
+        <div class="toolbar-group view-toggle">
+          <button type="button" id="view-list" class="icon-btn active" aria-label="List view">≡</button>
+          <button type="button" id="view-grid" class="icon-btn" aria-label="Grid view">⊞</button>
+        </div>
+      </div>
+      <div id="list-container">
+        <ul id="project-list" class="project-list"></ul>
+        <div id="project-grid" class="project-grid hidden"></div>
+      </div>
+      <div id="list-skeleton" class="skeleton-list hidden">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+      <div id="list-empty" class="empty-state hidden">
+        <p class="empty-title">No projects yet</p>
+        <p class="empty-desc">Add your first project to get started, or try changing your filters.</p>
+        <a href="#/new" class="btn btn-primary list-create-btn hidden">Add Project</a>
+      </div>
+    </div>
+
+    <div id="admin-view" class="view hidden">
+      <h1>Admin</h1>
+      <p class="sub">Manage user roles. Only admins can access this page.</p>
+      <div class="admin-card">
+        <h2>Users</h2>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Role</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="admin-users-tbody"></tbody>
+        </table>
+        <p id="admin-loading" class="sub">Loading…</p>
+        <p id="admin-error" class="auth-error hidden"></p>
+      </div>
+    </div>
+
+    <div id="detail-view" class="view hidden">
+      <a href="#/" class="back">← Back to list</a>
+      <article id="detail-content" class="detail-card"></article>
+      <div class="detail-actions">
+        <button type="button" id="share-btn" class="btn btn-secondary">Copy link</button>
+        <a id="edit-link" href="#" class="btn btn-secondary">Edit</a>
+        <button type="button" id="delete-btn" class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+
+    <div id="form-view" class="view hidden">
+      <a href="#" id="form-back" class="back">← Back</a>
+      <h1 id="form-title">Add Project</h1>
+      <form id="project-form" class="project-form" enctype="multipart/form-data">
+        <input type="hidden" id="project-id" name="id">
+        <label>
+          <span>Title <em>*</em></span>
+          <input type="text" name="title" required placeholder="Project title">
+        </label>
+        <label>
+          <span>Your name <em>*</em></span>
+          <input type="text" name="developer_name" required placeholder="Developer name">
+        </label>
+        <label>
+          <span>Description</span>
+          <textarea name="description" rows="4" placeholder="What the project does"></textarea>
+        </label>
+        <label>
+          <span>Timeline</span>
+          <input type="text" name="timeline" placeholder="e.g. Jan 2024 – Mar 2024">
+        </label>
+        <label>
+          <span>Link (URL)</span>
+          <input type="url" name="link" placeholder="https://...">
+        </label>
+        <label>
+          <span>Tech stack</span>
+          <input type="text" name="tech_stack" placeholder="e.g. React, Node, PostgreSQL">
+        </label>
+        <label>
+          <span>Tags</span>
+          <input type="text" id="tags-input" placeholder="Type a tag and press Enter (e.g. web, open-source)">
+          <div id="tags-chips" class="tags-chips"></div>
+          <input type="hidden" name="tags" id="tags-hidden">
+        </label>
+        <label>
+          <span>Status</span>
+          <select name="status">
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+            <option value="archived">Archived</option>
+          </select>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" name="featured" id="featured-checkbox" value="1">
+          <span>Feature this project on the list</span>
+        </label>
+        <label>
+          <span>Images</span>
+          <input type="file" name="images" id="images-input" accept="image/*" multiple>
+          <div id="image-previews" class="image-previews"></div>
+          <small>Add or replace images. In edit mode, new files are added to existing ones.</small>
+        </label>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Save</button>
+          <a href="#/" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+
+    <div id="login-view" class="view hidden">
+      <div class="auth-card">
+        <h1>Log in</h1>
+        <p class="sub">Sign in to create and manage projects.</p>
+        <form id="login-form" class="auth-form">
+          <label>
+            <span>Username</span>
+            <input type="text" name="username" required placeholder="Username" autocomplete="username">
+          </label>
+          <label>
+            <span>Password</span>
+            <input type="password" name="password" required placeholder="Password" autocomplete="current-password">
+          </label>
+          <div id="login-error" class="auth-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-block">Log in</button>
+        </form>
+        <p class="auth-footer">Don’t have an account? <a href="#/register">Register</a></p>
+      </div>
+    </div>
+
+    <div id="register-view" class="view hidden">
+      <div class="auth-card">
+        <h1>Register</h1>
+        <p class="sub">Create an account to add projects.</p>
+        <form id="register-form" class="auth-form">
+          <label>
+            <span>Username</span>
+            <input type="text" name="username" required placeholder="Username" minlength="2" autocomplete="username">
+          </label>
+          <label>
+            <span>Password</span>
+            <input type="password" name="password" required placeholder="At least 6 characters" minlength="6" autocomplete="new-password">
+          </label>
+          <div id="register-error" class="auth-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-block">Register</button>
+        </form>
+        <p class="auth-footer">Already have an account? <a href="#/login">Log in</a></p>
+      </div>
+    </div>
+
+    <div id="apis-view" class="view hidden">
+      <h1>Backend API</h1>
+      <p class="sub">Full API reference and live responses. Base URL: <code id="api-base-url">/api</code></p>
+
+      <section class="api-section">
+        <h2>Health</h2>
+        <div class="api-endpoint">
+          <span class="api-method get">GET</span>
+          <code>/api/health</code>
+          <span class="api-auth">— No auth</span>
+        </div>
+        <p class="api-desc">Health check. Returns <code>{ ok: true }</code>.</p>
+        <div class="api-response">
+          <h3>Response</h3>
+          <pre id="api-health-output" class="api-pre"><code>Loading…</code></pre>
+        </div>
+      </section>
+
+      <section class="api-section">
+        <h2>Auth</h2>
+        <div class="api-endpoint">
+          <span class="api-method post">POST</span>
+          <code>/api/auth/register</code>
+          <span class="api-auth">— No auth</span>
+        </div>
+        <p class="api-desc">Register a new user. Body: <code>{ "username": "string", "password": "string" }</code>. Username min 2 chars, password min 6. Returns <code>{ user: { id, username }, token }</code>.</p>
+
+        <div class="api-endpoint">
+          <span class="api-method post">POST</span>
+          <code>/api/auth/login</code>
+          <span class="api-auth">— No auth</span>
+        </div>
+        <p class="api-desc">Log in. Body: <code>{ "username": "string", "password": "string" }</code>. Returns <code>{ user: { id, username }, token }</code>. Use <code>Authorization: Bearer &lt;token&gt;</code> for protected routes.</p>
+
+        <div class="api-endpoint">
+          <span class="api-method get">GET</span>
+          <code>/api/auth/me</code>
+          <span class="api-auth">— Bearer token required</span>
+        </div>
+        <p class="api-desc">Current user. Returns <code>{ id, username, created_at }</code>.</p>
+        <div class="api-response">
+          <h3>GET /api/auth/me</h3>
+          <pre id="api-me-output" class="api-pre"><code>—</code></pre>
+        </div>
+      </section>
+
+      <section class="api-section">
+        <h2>Projects</h2>
+        <div class="api-endpoint">
+          <span class="api-method get">GET</span>
+          <code>/api/projects</code>
+          <span class="api-auth">— No auth</span>
+        </div>
+        <p class="api-desc">List projects. Query: <code>?search=</code> <code>?status=published|draft|archived</code> <code>?featured=1</code> <code>?sort=date|title|developer</code>.</p>
+        <div class="api-response">
+          <h3>Response</h3>
+          <pre id="api-projects-output" class="api-pre"><code>Loading…</code></pre>
+        </div>
+
+        <div class="api-endpoint">
+          <span class="api-method get">GET</span>
+          <code>/api/projects/:id</code>
+          <span class="api-auth">— No auth</span>
+        </div>
+        <p class="api-desc">Get one project by id.</p>
+
+        <div class="api-endpoint">
+          <span class="api-method post">POST</span>
+          <code>/api/projects</code>
+          <span class="api-auth">— Bearer token required</span>
+        </div>
+        <p class="api-desc">Create project. <code>multipart/form-data</code>: title, developer_name, description, timeline, link, tech_stack, status, featured (0|1), tags (JSON array), images (files). Sets created_by from token.</p>
+
+        <div class="api-endpoint">
+          <span class="api-method put">PUT</span>
+          <code>/api/projects/:id</code>
+          <span class="api-auth">— Bearer token required</span>
+        </div>
+        <p class="api-desc">Update project. JSON or multipart. Multipart: same fields as POST + keep_images (JSON array of URLs to keep).</p>
+
+        <div class="api-endpoint">
+          <span class="api-method delete">DELETE</span>
+          <code>/api/projects/:id</code>
+          <span class="api-auth">— Bearer token required</span>
+        </div>
+        <p class="api-desc">Delete project. Returns 204 No Content.</p>
+      </section>
+
+      <section class="api-section">
+        <h2>Static</h2>
+        <div class="api-endpoint">
+          <span class="api-method get">GET</span>
+          <code>/uploads/:filename</code>
+          <span class="api-auth">— No auth</span>
+        </div>
+        <p class="api-desc">Project images. Filenames come from project <code>images</code> array.</p>
+      </section>
+    </div>
+  </main>
+
+  <div id="modal-overlay" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h2 id="modal-title">Delete project?</h2>
+      <p>This cannot be undone. The project and its data will be removed.</p>
+      <div class="modal-actions">
+        <button type="button" id="modal-cancel" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="modal-confirm" class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="lightbox" class="lightbox hidden" aria-hidden="true">
+    <button type="button" id="lightbox-close" class="lightbox-close" aria-label="Close">×</button>
+    <img id="lightbox-img" src="" alt="">
+  </div>
+
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
