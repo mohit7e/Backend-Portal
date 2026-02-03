@@ -1,5 +1,5 @@
 {
-  "nextId": 4,
+  "nextId": 5,
   "users": [
     {
       "id": 1,
@@ -23,6 +23,14 @@
       "passwordHash": "518a879d66ca78b81901d6476b81ced9:0acefbd36a6849a54b1a598e70b68458a1a01db159aeaaa9a960fc5879d82e1f6dc0360712fa9f7ad3d7fee2bfbe30ebc43b54e5107a3fedb5ecc5482dac536d",
       "created_at": "2026-02-02T23:10:27.528Z",
       "is_admin": true
+    },
+    {
+      "id": 4,
+      "username": "testuser2",
+      "passwordHash": "f647ebaf7340cc6ebbae6fc06117e29d:576005bd7f008ef31b4a70bc67ce4b4a3198e9eb872c512ed08803d54e9911c026c6cc03bc202ab6da93c6b468f56c9b44e7c53aa417b6a4e3368ba19d245630",
+      "created_at": "2026-02-03T23:33:31.805Z",
+      "is_admin": false,
+      "role": "developer"
     }
   ]
 }

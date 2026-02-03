@@ -204,6 +204,23 @@ function statusPill(status) {
   return `<span class="status-pill ${s}">${escapeHtml(s)}</span>`;
 }
 
+// Highlight search term in text (case-insensitive), return HTML with <mark>
+function highlightSearch(text, term) {
+  if (!text || !term) return escapeHtml(text);
+  const t = String(text);
+  const q = String(term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`(${q})`, 'gi');
+  let out = '';
+  let last = 0;
+  let m;
+  while ((m = re.exec(t)) !== null) {
+    out += escapeHtml(t.slice(last, m.index)) + '<mark class="search-highlight">' + escapeHtml(m[1]) + '</mark>';
+    last = re.lastIndex;
+  }
+  out += escapeHtml(t.slice(last));
+  return out;
+}
+
 function renderList(projects) {
   if (listSkeleton) listSkeleton.classList.add('hidden');
   if (listContainer) listContainer.classList.remove('hidden');
@@ -217,10 +234,12 @@ function renderList(projects) {
   }
   listEmpty.classList.add('hidden');
 
+  const searchTerm = globalSearch && globalSearch.value ? globalSearch.value.trim() : '';
   const displayIdx = (p) => Math.min(p.display_image_index ?? 0, Math.max(0, (p.images && p.images.length) ? p.images.length - 1 : 0));
   const thumb = (p) => (p.images && p.images.length) ? `<img class="thumb" src="${escapeAttr(uploadUrl(p.images[displayIdx(p)]))}" alt="" loading="lazy" onerror="this.classList.add('thumb-error');">` : '<div class="thumb-placeholder">📁</div>';
   const tagsRow = (p) => (p.tags && p.tags.length) ? `<div class="tags-row">${p.tags.slice(0, 3).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>` : '';
   const createdBy = (p) => (p.created_by_username) ? `<div class="created-by">Created by ${escapeHtml(p.created_by_username)}</div>` : '';
+  const matchSnippet = (p) => (p.match_preview && searchTerm) ? `<div class="search-match">Found in: <span class="search-match-preview">${highlightSearch(p.match_preview, searchTerm)}</span></div>` : '';
 
   projectList.innerHTML = projects.map((p) => `
     <li>
@@ -229,6 +248,7 @@ function renderList(projects) {
         <div class="list-body">
           <span class="title">${p.featured ? '<span class="featured-star" aria-hidden="true">★</span>' : ''}${escapeHtml(p.title)} ${statusPill(p.status)}</span>
           <div class="meta">${escapeHtml(p.developer_name)} · ${p.updated_at ? new Date(p.updated_at).toLocaleDateString() : (p.created_at ? new Date(p.created_at).toLocaleDateString() : '')}</div>
+          ${matchSnippet(p)}
           ${createdBy(p)}
           ${tagsRow(p)}
         </div>
@@ -241,12 +261,14 @@ function renderList(projects) {
     const thumbImg = idx >= 0 ? `<img class="card-thumb" src="${escapeAttr(uploadUrl(p.images[idx]))}" alt="" loading="lazy" onerror="this.classList.add('thumb-error');">` : '<div class="card-thumb-placeholder">📁</div>';
     const tags = (p.tags && p.tags.length) ? p.tags.slice(0, 3).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('') : '';
     const createdBy = (p.created_by_username) ? `<div class="created-by">Created by ${escapeHtml(p.created_by_username)}</div>` : '';
+    const snippet = (p.match_preview && searchTerm) ? `<div class="search-match">${highlightSearch(p.match_preview, searchTerm)}</div>` : '';
     return `
       <a href="#/projects/${p.id}" class="project-card">
         ${thumbImg}
         <div class="card-body">
           <div class="card-title">${p.featured ? '<span class="featured-star">★</span>' : ''}${escapeHtml(p.title)} ${statusPill(p.status)}</div>
           <div class="card-meta">${escapeHtml(p.developer_name)}</div>
+          ${snippet}
           ${createdBy}
           ${tags ? `<div class="card-tags">${tags}</div>` : ''}
         </div>

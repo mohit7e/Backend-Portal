@@ -449,6 +449,23 @@ h1 {
   min-width: 0;
 }
 
+.search-match {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+.search-match-preview {
+  color: var(--text);
+}
+
+.search-highlight {
+  background: var(--accent);
+  color: #fff;
+  padding: 0.05em 0.15em;
+  border-radius: 3px;
+}
+
 .project-list .title {
   font-weight: 600;
   display: flex;
@@ -550,6 +567,19 @@ h1 {
   display: flex;
   align-items: center;
   gap: 0.35rem;
+}
+
+.project-card .search-match {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+.project-card .search-highlight {
+  background: var(--accent);
+  color: #fff;
+  padding: 0.05em 0.15em;
+  border-radius: 3px;
 }
 
 .project-card .card-meta {

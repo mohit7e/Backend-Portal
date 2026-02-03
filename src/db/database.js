@@ -24,33 +24,88 @@ function writeStore(store) {
   fs.writeFileSync(storePath, JSON.stringify(store, null, 2), 'utf8');
 }
 
+// Search across all text fields and attachment names; return match info for snippet/highlighting
+function projectMatchesSearch(project, qLower) {
+  const str = (v) => (v != null && String(v).toLowerCase().includes(qLower));
+  const title = (project.title || '').toLowerCase();
+  const dev = (project.developer_name || '').toLowerCase();
+  const desc = (project.description || '').toLowerCase();
+  const timeline = (project.timeline || '').toLowerCase();
+  const link = (project.link || '').toLowerCase();
+  const tech = (project.tech_stack || '').toLowerCase();
+  const createdBy = (project.created_by_username || '').toLowerCase();
+  if (title.includes(qLower)) return { field: 'title', preview: project.title || '' };
+  if (dev.includes(qLower)) return { field: 'developer', preview: project.developer_name || '' };
+  if (desc.includes(qLower)) {
+    const idx = desc.indexOf(qLower);
+    const start = Math.max(0, idx - 35);
+    const end = Math.min((project.description || '').length, idx + qLower.length + 35);
+    let preview = (project.description || '').slice(start, end);
+    if (start > 0) preview = '…' + preview;
+    if (end < (project.description || '').length) preview += '…';
+    return { field: 'description', preview };
+  }
+  if (timeline.includes(qLower)) return { field: 'timeline', preview: project.timeline || '' };
+  if (link.includes(qLower)) return { field: 'link', preview: project.link || '' };
+  if (tech.includes(qLower)) return { field: 'tech stack', preview: project.tech_stack || '' };
+  if (createdBy.includes(qLower)) return { field: 'created by', preview: project.created_by_username || '' };
+  const tags = project.tags || [];
+  for (let i = 0; i < tags.length; i++) {
+    if (String(tags[i]).toLowerCase().includes(qLower)) return { field: 'tag', preview: String(tags[i]) };
+  }
+  const attachments = project.attachments || [];
+  for (let i = 0; i < attachments.length; i++) {
+    const a = attachments[i];
+    const name = (a && typeof a === 'object' && a.name) ? a.name : (typeof a === 'string' ? a.split('/').pop() : '');
+    if (name && name.toLowerCase().includes(qLower)) return { field: 'attachment', preview: name };
+  }
+  // Image file names (stored as URLs like /uploads/filename.ext)
+  const images = project.images || [];
+  for (let i = 0; i < images.length; i++) {
+    const url = typeof images[i] === 'string' ? images[i] : '';
+    const fileName = url.split('/').pop() || '';
+    if (fileName && fileName.toLowerCase().includes(qLower)) return { field: 'image', preview: fileName };
+  }
+  return null;
+}
+
 function listProjects(opts = {}) {
   const store = readStore();
-  let list = store.projects.map((p) => ({
-    id: p.id,
-    title: p.title,
-    developer_name: p.developer_name,
-    created_at: p.created_at,
-    updated_at: p.updated_at,
-    tags: p.tags || [],
-    featured: !!p.featured,
-    status: p.status || 'published',
-    images: p.images || [],
-    attachments: p.attachments || [],
-    display_image_index: p.display_image_index ?? 0,
-    created_by_user_id: p.created_by_user_id ?? null,
-    created_by_username: p.created_by_username ?? null,
-  }));
-
   const { search, tag, status: statusFilter, featured, sort = 'date' } = opts;
-  if (search && search.trim()) {
-    const q = search.trim().toLowerCase();
-    list = list.filter(
-      (p) =>
-        (p.title && p.title.toLowerCase().includes(q)) ||
-        (p.developer_name && p.developer_name.toLowerCase().includes(q))
-    );
+  const q = search && search.trim() ? search.trim().toLowerCase() : '';
+
+  // When searching, filter by full project and attach match info
+  let projects = store.projects;
+  if (q) {
+    projects = projects.filter((p) => projectMatchesSearch(p, q));
   }
+
+  let list = projects.map((p) => {
+    const item = {
+      id: p.id,
+      title: p.title,
+      developer_name: p.developer_name,
+      created_at: p.created_at,
+      updated_at: p.updated_at,
+      tags: p.tags || [],
+      featured: !!p.featured,
+      status: p.status || 'published',
+      images: p.images || [],
+      attachments: p.attachments || [],
+      display_image_index: p.display_image_index ?? 0,
+      created_by_user_id: p.created_by_user_id ?? null,
+      created_by_username: p.created_by_username ?? null,
+    };
+    if (q) {
+      const match = projectMatchesSearch(p, q);
+      if (match) {
+        item.match_field = match.field;
+        item.match_preview = match.preview;
+      }
+    }
+    return item;
+  });
+
   if (tag && tag.trim()) {
     const t = tag.trim().toLowerCase();
     list = list.filter((p) => Array.isArray(p.tags) && p.tags.some((x) => String(x).toLowerCase() === t));
