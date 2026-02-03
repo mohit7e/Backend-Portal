@@ -163,9 +163,17 @@
         </label>
         <label>
           <span>Images</span>
+          <div id="existing-images" class="existing-media" aria-label="Current images"></div>
           <input type="file" name="images" id="images-input" accept="image/*" multiple>
           <div id="image-previews" class="image-previews"></div>
-          <small>Add or replace images. In edit mode, new files are added to existing ones.</small>
+          <small>Choose which image appears on the projects list. In edit mode you can remove images or add new ones.</small>
+        </label>
+        <label>
+          <span>Attachments (documents)</span>
+          <div id="existing-attachments" class="existing-media" aria-label="Current attachments"></div>
+          <input type="file" name="attachments" id="attachments-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.rtf,.odt,.ods,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv" multiple>
+          <div id="attachments-list" class="attachments-list"></div>
+          <small>PDF, Word, Excel, text, CSV, RTF, OpenDocument. In edit mode you can remove attachments or add new ones.</small>
         </label>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">Save</button>

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
-const { upload } = require('../middleware/upload');
+const { upload, uploadProjectFiles } = require('../middleware/upload');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 
 // List projects with optional search, tag, status, featured, sort
@@ -28,11 +28,15 @@ router.get('/:id', (req, res) => {
   }
 });
 
-// Create project (requires auth + developer or admin role; supports multipart)
-router.post('/', authMiddleware, requireRole('developer', 'admin'), upload.array('images', 20), (req, res) => {
+// Create project (requires auth + developer or admin role; supports multipart: images + attachments)
+router.post('/', authMiddleware, requireRole('developer', 'admin'), uploadProjectFiles, (req, res) => {
   try {
     const body = req.body || {};
-    const images = (req.files || []).map((f) => `/uploads/${f.filename}`);
+    const imageFiles = (req.files && req.files.images) || [];
+    const attachmentFiles = (req.files && req.files.attachments) || [];
+    const images = imageFiles.map((f) => `/uploads/${f.filename}`);
+    const attachments = attachmentFiles.map((f) => ({ url: `/uploads/${f.filename}`, name: f.originalname || f.filename }));
+    const display_image_index = body.display_image_index != null ? parseInt(body.display_image_index, 10) : 0;
     const data = {
       title: body.title,
       developer_name: body.developer_name,
@@ -41,6 +45,8 @@ router.post('/', authMiddleware, requireRole('developer', 'admin'), upload.array
       link: body.link,
       tech_stack: body.tech_stack,
       images,
+      attachments,
+      display_image_index,
       tags: body.tags ? JSON.parse(body.tags) : [],
       featured: body.featured === 'true' || body.featured === '1',
       status: body.status || 'published',
@@ -78,6 +84,8 @@ const putHandler = (req, res) => {
 
     if (isJson) {
       if (body.images !== undefined) images = Array.isArray(body.images) ? body.images : existing.images;
+      const attachments = body.attachments !== undefined ? (Array.isArray(body.attachments) ? body.attachments : (existing.attachments || [])) : (existing.attachments || []);
+      const display_image_index = body.display_image_index !== undefined ? parseInt(body.display_image_index, 10) : (existing.display_image_index ?? 0);
       const data = {
         title: body.title ?? existing.title,
         developer_name: body.developer_name ?? existing.developer_name,
@@ -86,6 +94,8 @@ const putHandler = (req, res) => {
         link: body.link ?? existing.link,
         tech_stack: body.tech_stack ?? existing.tech_stack,
         images,
+        attachments,
+        display_image_index,
         tags: body.tags !== undefined ? body.tags : (existing.tags || []),
         featured: body.featured !== undefined ? !!body.featured : !!existing.featured,
         status: body.status ?? existing.status ?? 'published',
@@ -94,9 +104,15 @@ const putHandler = (req, res) => {
       return res.json(project);
     }
 
-    const newImages = (req.files || []).map((f) => `/uploads/${f.filename}`);
+    const imageFiles = (req.files && req.files.images) || [];
+    const attachmentFiles = (req.files && req.files.attachments) || [];
+    const newImages = imageFiles.map((f) => `/uploads/${f.filename}`);
     const keepImages = body.keep_images ? JSON.parse(body.keep_images) : existing.images;
     images = Array.isArray(keepImages) ? [...keepImages, ...newImages] : newImages;
+    const newAttachments = attachmentFiles.map((f) => ({ url: `/uploads/${f.filename}`, name: f.originalname || f.filename }));
+    const keepAttachments = body.keep_attachments ? JSON.parse(body.keep_attachments) : (existing.attachments || []);
+    const attachments = Array.isArray(keepAttachments) ? [...keepAttachments, ...newAttachments] : newAttachments;
+    const display_image_index = body.display_image_index != null ? Math.max(0, Math.min(parseInt(body.display_image_index, 10), (images.length - 1) || 0)) : (existing.display_image_index ?? 0);
 
     const data = {
       title: body.title ?? existing.title,
@@ -106,6 +122,8 @@ const putHandler = (req, res) => {
       link: body.link ?? existing.link,
       tech_stack: body.tech_stack ?? existing.tech_stack,
       images,
+      attachments,
+      display_image_index,
       tags: body.tags ? JSON.parse(body.tags) : (existing.tags || []),
       featured: body.featured !== undefined ? (body.featured === 'true' || body.featured === '1') : !!existing.featured,
       status: (body.status && body.status.trim()) ? body.status.trim() : (existing.status || 'published'),
@@ -119,7 +137,7 @@ const putHandler = (req, res) => {
 
 router.put('/:id', authMiddleware, (req, res, next) => {
   if (req.is('application/json')) return putHandler(req, res);
-  upload.array('images', 20)(req, res, (err) => {
+  uploadProjectFiles(req, res, (err) => {
     if (err) return res.status(400).json({ error: err.message });
     putHandler(req, res);
   });

@@ -40,6 +40,10 @@ const lightboxImg = $('lightbox-img');
 const lightboxClose = $('lightbox-close');
 const imagesInput = $('images-input');
 const imagePreviews = $('image-previews');
+const existingImagesEl = $('existing-images');
+const existingAttachmentsEl = $('existing-attachments');
+const attachmentsInput = $('attachments-input');
+const attachmentsList = $('attachments-list');
 const tagsInput = $('tags-input');
 const tagsChips = $('tags-chips');
 const tagsHidden = $('tags-hidden');
@@ -49,6 +53,11 @@ let currentProjectId = null;
 let listViewMode = 'list';
 let searchTimeout = null;
 let currentUser = null;
+// Edit form: which images/attachments to keep; which image is the list thumbnail
+let currentImages = [];
+let currentAttachments = [];
+let displayImageUrl = null;       // (edit) URL of image to show on projects list
+let displayImageNewIndex = 0;     // (create) index among new image files for list thumbnail
 
 function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -182,6 +191,14 @@ function escapeAttr(s) {
   return String(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// Ensure upload URLs work (same-origin absolute URL)
+function uploadUrl(path) {
+  if (!path || typeof path !== 'string') return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  const origin = window.location.origin || '';
+  return path.startsWith('/') ? origin + path : origin + '/' + path.replace(/^\//, '');
+}
+
 function statusPill(status) {
   const s = (status || 'published').toLowerCase();
   return `<span class="status-pill ${s}">${escapeHtml(s)}</span>`;
@@ -200,7 +217,8 @@ function renderList(projects) {
   }
   listEmpty.classList.add('hidden');
 
-  const thumb = (p) => (p.images && p.images[0]) ? `<img class="thumb" src="${escapeAttr(p.images[0])}" alt="">` : '<div class="thumb-placeholder">📁</div>';
+  const displayIdx = (p) => Math.min(p.display_image_index ?? 0, Math.max(0, (p.images && p.images.length) ? p.images.length - 1 : 0));
+  const thumb = (p) => (p.images && p.images.length) ? `<img class="thumb" src="${escapeAttr(uploadUrl(p.images[displayIdx(p)]))}" alt="" loading="lazy" onerror="this.classList.add('thumb-error');">` : '<div class="thumb-placeholder">📁</div>';
   const tagsRow = (p) => (p.tags && p.tags.length) ? `<div class="tags-row">${p.tags.slice(0, 3).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>` : '';
   const createdBy = (p) => (p.created_by_username) ? `<div class="created-by">Created by ${escapeHtml(p.created_by_username)}</div>` : '';
 
@@ -219,7 +237,8 @@ function renderList(projects) {
   `).join('');
 
   projectGrid.innerHTML = projects.map((p) => {
-    const thumbImg = (p.images && p.images[0]) ? `<img class="card-thumb" src="${escapeAttr(p.images[0])}" alt="">` : '<div class="card-thumb-placeholder">📁</div>';
+    const idx = (p.images && p.images.length) ? Math.min(p.display_image_index ?? 0, p.images.length - 1) : -1;
+    const thumbImg = idx >= 0 ? `<img class="card-thumb" src="${escapeAttr(uploadUrl(p.images[idx]))}" alt="" loading="lazy" onerror="this.classList.add('thumb-error');">` : '<div class="card-thumb-placeholder">📁</div>';
     const tags = (p.tags && p.tags.length) ? p.tags.slice(0, 3).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('') : '';
     const createdBy = (p.created_by_username) ? `<div class="created-by">Created by ${escapeHtml(p.created_by_username)}</div>` : '';
     return `
@@ -255,12 +274,29 @@ function renderDetail(project) {
   const tags = (project.tags && project.tags.length) ? project.tags.map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join('') : '';
   let imagesHtml = '';
   if (project.images && project.images.length) {
+    const imgSrc = (src) => escapeAttr(uploadUrl(src));
     imagesHtml = `
       <div class="field">
         <div class="field-label">Images</div>
         <div class="images">
-          ${project.images.map((src) => `<img src="${escapeAttr(src)}" alt="" data-src="${escapeAttr(src)}">`).join('')}
+          ${project.images.map((src) => `<img src="${imgSrc(src)}" alt="" data-src="${imgSrc(src)}" loading="lazy" onerror="this.onerror=null;this.src='';this.alt='Image failed to load';this.classList.add('img-error');">`).join('')}
         </div>
+      </div>
+    `;
+  }
+  let attachmentsHtml = '';
+  if (project.attachments && project.attachments.length) {
+    attachmentsHtml = `
+      <div class="field">
+        <div class="field-label">Attachments</div>
+        <ul class="attachments-detail">
+          ${project.attachments.map((a) => {
+            const url = typeof a === 'string' ? a : (a && a.url);
+            const name = (a && a.name) || (typeof a === 'string' ? a.split('/').pop() : 'Download');
+            if (!url) return '';
+            return `<li><a href="${escapeAttr(uploadUrl(url))}" target="_blank" rel="noopener">${escapeHtml(name)}</a></li>`;
+          }).join('')}
+        </ul>
       </div>
     `;
   }
@@ -279,6 +315,7 @@ function renderDetail(project) {
       </div>
     `).join('')}
     ${imagesHtml}
+    ${attachmentsHtml}
   `;
 
   detailContent.querySelectorAll('.images img').forEach((img) => {
@@ -333,6 +370,53 @@ function addTag(tag) {
   tagsChips.appendChild(chip);
 }
 
+function renderExistingImages() {
+  if (!existingImagesEl) return;
+  existingImagesEl.innerHTML = '';
+  if (!currentImages.length) return;
+  const displayUrl = displayImageUrl || currentImages[0];
+  currentImages.forEach((url, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'existing-image-wrap' + (url === displayUrl ? ' is-list-image' : '');
+    wrap.innerHTML = `
+      <img src="${escapeAttr(uploadUrl(url))}" alt="" class="existing-thumb">
+      <div class="existing-image-actions">
+        <button type="button" class="btn btn-secondary btn-sm set-list-image-btn" data-url="${escapeAttr(url)}" title="Show this image on the projects list">Set as list image</button>
+        <button type="button" class="btn btn-danger btn-sm remove-image-btn" data-url="${escapeAttr(url)}" title="Remove image">Remove</button>
+      </div>
+    `;
+    wrap.querySelector('.set-list-image-btn').addEventListener('click', () => {
+      displayImageUrl = url;
+      renderExistingImages();
+    });
+    wrap.querySelector('.remove-image-btn').addEventListener('click', () => {
+      currentImages = currentImages.filter((u) => u !== url);
+      if (displayImageUrl === url) displayImageUrl = currentImages[0] || null;
+      renderExistingImages();
+    });
+    existingImagesEl.appendChild(wrap);
+  });
+}
+
+function renderExistingAttachments() {
+  if (!existingAttachmentsEl) return;
+  existingAttachmentsEl.innerHTML = '';
+  if (!currentAttachments.length) return;
+  currentAttachments.forEach((a) => {
+    const url = typeof a === 'string' ? a : (a && a.url);
+    const name = (a && a.name) || (typeof a === 'string' ? a.split('/').pop() : 'File');
+    if (!url) return;
+    const chip = document.createElement('div');
+    chip.className = 'existing-attachment-chip';
+    chip.innerHTML = `<span>${escapeHtml(name)}</span> <button type="button" class="remove-attachment-btn" data-url="${escapeAttr(url)}" aria-label="Remove">×</button>`;
+    chip.querySelector('button').addEventListener('click', () => {
+      currentAttachments = currentAttachments.filter((x) => (typeof x === 'string' ? x : x && x.url) !== url);
+      renderExistingAttachments();
+    });
+    existingAttachmentsEl.appendChild(chip);
+  });
+}
+
 function fillForm(project) {
   projectIdInput.value = project.id;
   projectForm.title.value = project.title;
@@ -344,6 +428,14 @@ function fillForm(project) {
   projectForm.status.value = project.status || 'published';
   $('featured-checkbox').checked = !!project.featured;
   projectForm.images.value = '';
+  if (attachmentsInput) attachmentsInput.value = '';
+  if (attachmentsList) attachmentsList.innerHTML = '';
+  currentImages = project.images && Array.isArray(project.images) ? [...project.images] : [];
+  currentAttachments = project.attachments && Array.isArray(project.attachments) ? project.attachments.map((a) => (typeof a === 'object' && a && (a.url || a.name)) ? { ...a } : a) : [];
+  const di = project.display_image_index ?? 0;
+  displayImageUrl = (currentImages.length && currentImages[di]) ? currentImages[di] : (currentImages[0] || null);
+  renderExistingImages();
+  renderExistingAttachments();
   currentTags = project.tags && Array.isArray(project.tags) ? [...project.tags] : [];
   syncTagsHidden();
   tagsChips.innerHTML = '';
@@ -355,25 +447,57 @@ function clearForm() {
   projectIdInput.value = '';
   projectForm.reset();
   currentTags = [];
+  currentImages = [];
+  currentAttachments = [];
+  displayImageUrl = null;
+  displayImageNewIndex = 0;
   syncTagsHidden();
   tagsChips.innerHTML = '';
   imagePreviews.innerHTML = '';
+  if (attachmentsList) attachmentsList.innerHTML = '';
+  if (existingImagesEl) existingImagesEl.innerHTML = '';
+  if (existingAttachmentsEl) existingAttachmentsEl.innerHTML = '';
 }
 
 imagesInput.addEventListener('change', () => {
   imagePreviews.innerHTML = '';
   const files = imagesInput.files;
+  const isEdit = !!projectIdInput.value;
   for (let i = 0; i < files.length; i++) {
+    const idx = i;
     const fr = new FileReader();
     fr.onload = () => {
-      const img = document.createElement('img');
-      img.className = 'preview';
-      img.src = fr.result;
-      imagePreviews.appendChild(img);
+      const wrap = document.createElement('div');
+      wrap.className = 'preview-wrap' + (!isEdit && idx === displayImageNewIndex ? ' is-list-image' : '');
+      const src = typeof fr.result === 'string' ? fr.result : '';
+      wrap.innerHTML = `
+        <img class="preview" src="${escapeAttr(src)}" alt="">
+        ${!isEdit ? `<button type="button" class="btn btn-secondary btn-sm set-list-new-btn" data-idx="${idx}">Set as list image</button>` : ''}
+      `;
+      if (!isEdit) {
+        wrap.querySelector('.set-list-new-btn').addEventListener('click', () => {
+          displayImageNewIndex = idx;
+          imagePreviews.querySelectorAll('.preview-wrap').forEach((w, j) => w.classList.toggle('is-list-image', j === idx));
+        });
+      }
+      imagePreviews.appendChild(wrap);
     };
     fr.readAsDataURL(files[i]);
   }
 });
+
+if (attachmentsInput && attachmentsList) {
+  attachmentsInput.addEventListener('change', () => {
+    attachmentsList.innerHTML = '';
+    const files = attachmentsInput.files;
+    for (let i = 0; i < files.length; i++) {
+      const span = document.createElement('span');
+      span.className = 'attachment-chip';
+      span.textContent = files[i].name;
+      attachmentsList.appendChild(span);
+    }
+  });
+}
 
 tagsInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
@@ -601,14 +725,24 @@ async function submitForm(e) {
   formData.append('featured', $('featured-checkbox').checked ? '1' : '0');
   formData.append('tags', JSON.stringify(currentTags));
 
-  const files = form.images.files;
-  for (let i = 0; i < files.length; i++) {
-    formData.append('images', files[i]);
+  const imageFiles = form.images.files;
+  for (let i = 0; i < imageFiles.length; i++) {
+    formData.append('images', imageFiles[i]);
+  }
+  const attachmentFiles = attachmentsInput && attachmentsInput.files;
+  if (attachmentFiles) {
+    for (let i = 0; i < attachmentFiles.length; i++) {
+      formData.append('attachments', attachmentFiles[i]);
+    }
   }
 
   if (isEdit) {
-    const project = await fetchProject(id);
-    formData.append('keep_images', JSON.stringify(project.images || []));
+    formData.append('keep_images', JSON.stringify(currentImages));
+    formData.append('keep_attachments', JSON.stringify(currentAttachments));
+    const displayIdx = displayImageUrl ? Math.max(0, currentImages.indexOf(displayImageUrl)) : 0;
+    formData.append('display_image_index', String(displayIdx));
+  } else {
+    formData.append('display_image_index', String(Math.max(0, displayImageNewIndex)));
   }
 
   try {

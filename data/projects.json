@@ -10,16 +10,22 @@
       "link": "http://3.234.243.250:8000/",
       "tech_stack": "",
       "images": [
-        "/uploads/1770053096927-uv5qx6qf8x.png",
-        "/uploads/1770160310497-h0j5qs8nu6.png"
+        "/uploads/1770161472283-Screenshot_2026-02-02_at_12.24.34___PM.png"
       ],
       "tags": [],
-      "featured": false,
+      "featured": true,
       "status": "published",
       "created_by_user_id": 1,
       "created_by_username": "mohit",
       "created_at": "2026-02-02T17:24:56.932Z",
-      "updated_at": "2026-02-03T23:11:50.504Z"
+      "updated_at": "2026-02-03T23:31:12.292Z",
+      "attachments": [
+        {
+          "url": "/uploads/1770161472287-Oakstone_AI_Initiative_Security___Govern.docx",
+          "name": "Oakstone AI_Initiative Security & Governance Questionnaire.docx"
+        }
+      ],
+      "display_image_index": 0
     },
     {
       "id": 10,

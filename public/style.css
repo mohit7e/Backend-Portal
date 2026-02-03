@@ -418,6 +418,10 @@ h1 {
   background: var(--surface-hover);
 }
 
+.project-list .thumb.thumb-error {
+  object-fit: none;
+  background: var(--surface-hover);
+}
 .project-list .thumb {
   width: 56px;
   height: 56px;
@@ -516,6 +520,9 @@ h1 {
   box-shadow: var(--shadow);
 }
 
+.project-card .card-thumb.thumb-error {
+  background: var(--surface-hover);
+}
 .project-card .card-thumb {
   width: 100%;
   aspect-ratio: 16/10;
@@ -820,11 +827,141 @@ h1 {
   opacity: 1;
 }
 
+.existing-media {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.existing-image-wrap {
+  position: relative;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-hover);
+}
+
+.existing-image-wrap.is-list-image {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.existing-image-wrap .existing-thumb {
+  display: block;
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+}
+
+.existing-image-wrap .existing-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  background: var(--surface);
+}
+
+.existing-image-wrap .existing-image-actions .btn {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.existing-attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.875rem;
+  background: var(--surface-hover);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.existing-attachment-chip .remove-attachment-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0 0.2rem;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.existing-attachment-chip .remove-attachment-btn:hover {
+  color: var(--danger);
+}
+
 .image-previews {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.5rem;
+}
+
+.image-previews .preview-wrap {
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-hover);
+}
+
+.image-previews .preview-wrap.is-list-image {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.image-previews .preview-wrap .preview {
+  display: block;
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+}
+
+.image-previews .preview-wrap .set-list-new-btn {
+  display: block;
+  width: 100%;
+  margin: 0;
+  border-radius: 0;
+  font-size: 0.75rem;
+}
+
+.attachments-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin-left: 0;
+}
+
+.attachment-chip {
+  display: inline-block;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.875rem;
+  background: var(--surface-hover);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.detail-card .attachments-detail {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.detail-card .attachments-detail li {
+  margin-bottom: 0.35rem;
+}
+
+.detail-card .attachments-detail a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.detail-card .attachments-detail a:hover {
+  text-decoration: underline;
 }
 
 .image-previews .preview {

@@ -36,6 +36,8 @@ function listProjects(opts = {}) {
     featured: !!p.featured,
     status: p.status || 'published',
     images: p.images || [],
+    attachments: p.attachments || [],
+    display_image_index: p.display_image_index ?? 0,
     created_by_user_id: p.created_by_user_id ?? null,
     created_by_username: p.created_by_username ?? null,
   }));
@@ -74,6 +76,8 @@ function getProjectById(id) {
   return {
     ...project,
     images: project.images || [],
+    attachments: project.attachments || [],
+    display_image_index: project.display_image_index ?? 0,
     tags: project.tags || [],
     featured: !!project.featured,
     status: project.status || 'published',
@@ -95,6 +99,8 @@ function createProject(data) {
     link: data.link || '',
     tech_stack: data.tech_stack || '',
     images: data.images || [],
+    attachments: data.attachments || [],
+    display_image_index: (() => { const imgs = data.images || []; const idx = parseInt(data.display_image_index, 10) || 0; return Math.max(0, Math.min(idx, (imgs.length - 1) || 0)); })(),
     tags: data.tags || [],
     featured: !!data.featured,
     status: data.status || 'published',
@@ -114,6 +120,10 @@ function updateProject(id, data) {
   if (index === -1) return null;
 
   const existing = store.projects[index];
+  const images = data.images !== undefined ? data.images : existing.images;
+  const display_image_index = data.display_image_index !== undefined
+    ? Math.max(0, Math.min(parseInt(data.display_image_index, 10) || 0, (images.length - 1) || 0))
+    : (existing.display_image_index ?? 0);
   const project = {
     ...existing,
     title: data.title ?? existing.title,
@@ -122,7 +132,9 @@ function updateProject(id, data) {
     timeline: data.timeline ?? existing.timeline,
     link: data.link ?? existing.link,
     tech_stack: data.tech_stack ?? existing.tech_stack,
-    images: data.images !== undefined ? data.images : existing.images,
+    images,
+    attachments: data.attachments !== undefined ? data.attachments : (existing.attachments || []),
+    display_image_index,
     tags: data.tags !== undefined ? data.tags : (existing.tags || []),
     featured: data.featured !== undefined ? !!data.featured : !!existing.featured,
     status: data.status ?? existing.status ?? 'published',
