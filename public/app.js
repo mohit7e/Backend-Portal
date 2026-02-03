@@ -392,10 +392,14 @@ function applyFiltersAndLoad() {
     .then((projects) => {
       renderList(projects);
     })
-    .catch(() => {
+    .catch((err) => {
       listSkeleton.classList.add('hidden');
       listContainer.classList.remove('hidden');
-      toast('Failed to load projects', 'error');
+      const msg = err.message || 'Failed to load projects';
+      const hint = msg.includes('Failed to fetch') || msg.includes('NetworkError')
+        ? ' Make sure the server is running (npm start in the project folder).'
+        : '';
+      toast(msg + hint, 'error');
     });
 }
 
@@ -661,8 +665,10 @@ function doDelete() {
 function route() {
   const { view, mode, id } = parseHash();
   const token = getToken();
-  const publicViews = ['login', 'register'];
-  if (!publicViews.includes(view) && !token) {
+  // List and detail are public; login/register/admin/apis/form require auth where needed
+  const authRequiredViews = ['admin', 'apis', 'form'];
+  const needsAuth = authRequiredViews.includes(view);
+  if (needsAuth && !token) {
     window.location.hash = '#/login';
     return;
   }
