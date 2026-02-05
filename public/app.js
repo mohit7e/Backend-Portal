@@ -92,6 +92,7 @@ function updateHeader() {
   const navRegister = $('nav-register');
   const navLogout = $('nav-logout');
   const navUser = $('nav-user');
+  const searchWrap = $('header-search-wrap');
   const role = userRole();
   if (currentUser) {
     if (navLogin) navLogin.classList.add('hidden');
@@ -101,6 +102,7 @@ function updateHeader() {
       navUser.textContent = currentUser.username;
       navUser.classList.remove('hidden');
     }
+    if (searchWrap) searchWrap.classList.remove('hidden');
     if ($('nav-admin-link')) $('nav-admin-link').classList.toggle('hidden', role !== 'admin');
     if ($('nav-apis-link')) $('nav-apis-link').classList.toggle('hidden', role !== 'admin');
     if ($('nav-developer-badge')) $('nav-developer-badge').classList.toggle('hidden', role !== 'developer');
@@ -112,6 +114,11 @@ function updateHeader() {
     if (navRegister) navRegister.classList.remove('hidden');
     if (navLogout) navLogout.classList.add('hidden');
     if (navUser) navUser.classList.add('hidden');
+    if (searchWrap) {
+      searchWrap.classList.add('hidden');
+      if (globalSearch) globalSearch.value = '';
+      if (listView && !listView.classList.contains('hidden')) applyFiltersAndLoad();
+    }
     if ($('nav-admin-link')) $('nav-admin-link').classList.add('hidden');
     if ($('nav-apis-link')) $('nav-apis-link').classList.add('hidden');
     if ($('nav-developer-badge')) $('nav-developer-badge').classList.add('hidden');
